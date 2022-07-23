@@ -2,7 +2,7 @@
 
 This repo is for building a Windows persistence toolkit in order to learn Golang.   
 At the moment, the only supported persistence techniques are registry edits under HKEY_LOCAL_MACHINE and HKEY_CURRENT_USER, and file creation under the system or user-specific startup folders.    
-Inspiration for the registry changes taken from [Mandiant's SharPersist](https://github.com/mandiant/SharPersist)   
+Inspiration taken from [Mandiant's SharPersist](https://github.com/mandiant/SharPersist)   
   
 ```
 Usage of .\go-persist.exe:
